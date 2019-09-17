@@ -1,0 +1,64 @@
+---
+title: "GermanCredit with PCA"
+author: "Manish Gyawali"
+date: "8/28/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data = read.csv2("~/RProjects/Banking/data/german_credit_data_long.csv", sep = ",")
+```
+
+```{r}
+numeric_vars = which(lapply(data, is.factor) != T) %>% names
+factor_vars = which(lapply(data, is.factor) == T) %>% names
+```
+
+```{r}
+res.pca = prcomp(training[numeric_vars], scale. = T)
+```
+
+```{r}
+require(factoextra)
+fviz_eig(res.pca)
+```
+
+```{r}
+fviz_pca_ind(res.pca, col.ind = "cos2", 
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+  repel = T)
+```
+
+```{r}
+fviz_pca_var(res.pca, col.var = "contrib", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = T)
+```
+
+```{r}
+cat("Eigenvalues");cat("\n")
+eig.val = get_eig(res.pca)
+eig.val
+cat("\n")
+#Results for variables
+cat("Results for individuals");cat("\n")
+res.var = get_pca_var(res.pca)
+res.var$coord
+res.var$contrib
+res.var$cos2
+cat("\n")
+#Results for individuals
+cat("Results for individuals");cat("\n")
+res.ind = get_pca_ind(res.pca)
+res.ind$coord
+res.ind$contrib
+res.ind$cos2
+
+```
+
+```{r}
+
+```
+

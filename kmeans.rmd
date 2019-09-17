@@ -1,0 +1,140 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r include=F}
+knitr::opts_chunk$set(echo = F, warning = F, comment = NA)
+```
+
+
+```{r}
+#source("~/RProjects/Banking/scripts/German_Credit.r")
+
+```
+
+```{r}
+require(dplyr)
+require(tidyverse)
+require(cluster)
+require(dendextend)
+require(factoextra)
+```
+
+```{r include=F}
+data = read.csv2("~/RProjects/Banking/data/german_credit_data_long.csv", sep = ",")
+```
+
+```{r}
+glimpse(data)
+```
+
+```{r}
+
+numeric_vars = which(lapply(data, is.factor) != T) %>% names
+factor_vars = which(lapply(data, is.factor) == T) %>% names
+```
+
+```{r}
+#check for Zero Variance
+#str(data[numeric_vars])
+which(lapply(data[numeric_vars], var) == 0)
+```
+
+```{r}
+str(data[numeric_vars])
+cat("\n");cat("\n")
+str(data[factor_vars])
+```
+
+```{r}
+require(lattice)
+
+xyplot(credit_amount ~ age | personal_status, 
+       group = class,
+       auto.key = T,
+       data = data, 
+       panel = lattice.getOption("panel.dotplot"))
+```
+
+```{r}
+glimpse(data[numeric_vars])
+cat("\n");cat("\n")
+glimpse(data[factor_vars])
+```
+
+
+Lets use a technique called multiple factor analysis
+In order to do this, let us separate factors and integers in a better manner 
+
+```{r}
+require(factoextra)
+require(FactoMineR)
+
+```
+
+```{r}
+
+group_1 = c("checking_status", "savings_status", "credit_history")
+group_2 = c("employment", "job","class")
+group_3 = c("housing", "own_telephone")
+group_4 = c("property_magnitude", "other_payment_plans")
+group_5 = c("personal_status", "other_parties", "foreign_worker")
+group_6 = c("duration","credit_amount","existing_credits")
+group_7 = c("age", "num_dependents")
+group_8 = c("installment_commitment", "residence_since")
+
+newdata = cbind(data[factor_vars], data[numeric_vars])
+newdata1 = cbind(newdata[group_1], newdata[group_2], newdata[group_3],
+                newdata[group_4], newdata[group_5],newdata[group_6],
+                newdata[group_7], newdata[group_8])
+
+
+res = MFA(newdata1, 
+    group = c(3,3,2,2,3,3,2,2), 
+    type = c(rep("n",5),rep("s",3)),
+    name.group = c("Status", "Employment", "Housing", "Prop", "Personal",
+                   "Credit","Age","Other"),
+    num.group.sup = c(5,8)
+    )
+
+```
+
+```{r}
+summary(res)
+```
+
+
+```{r}
+
+glm_model = glm(class ~ job + duration + savings_status, family = "binomial", data = data)
+
+```
+
+```{r}
+summary(glm_model)$coefficients
+```
+
+```{r}
+glm_prediction = predict(glm_model, type = "response") 
+```
+
+
+
+```{r}
+
+require(VIM)
+aggr_plot <- aggr(data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE,
+                  labels=names(data), cex.axis=.7, gap=3,
+                  ylab=c("Histogram of missing data","Pattern"))
+
+library(mice)
+tempData = mice(data,m=5,meth="pmm",maxit = 50,seed = 123)
+completedData = complete(tempData,2) 
+
+```
+
+```{r}
+training = sample_frac(data, 0.75)
+testing = anti_join(data,training)
+```

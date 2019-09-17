@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r include=F}
+knitr::opts_chunk$set(echo = F, warning = F, comment = NA)
+```
+
+```{r}
+source("~/RProjects/Banking/germanCredit/essentials.R")
+
+```
+
+```{r}
+require(tidyr);require(dplyr);require(lattice);require(ggplot2)
+```
+
+```{r}
+glimpse(data)
+```
+
+```{r}
+require(MASS)
+
+lda_model = lda(class ~., data = training)
+
+```
+
+```{r}
+require(ROCR)
+
+pred = predict(lda_model, testing)
+pred_1 = prediction(pred$x,pred$class)
+```
+
+```{r}
+require(caret)
+confusionMatrix(pred$class, testing$class)
+```
+```{r}
+roc.perf = performance(pred_1, measure = "tpr", x.measure = "fpr")
+plot(roc.perf)
+abline(a=0,b=1)
+```
+
+```{r}
+require(pROC)
+pROC.obj = roc(pred$class, pred$x, smooth = F, plot = T, auc = T, 
+               show.thres = T)
+```
+
